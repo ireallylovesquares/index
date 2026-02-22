@@ -1,157 +1,57 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>House Builder – clean v1</title>
-<style>
-  body{
-    margin:0;
-    background:#0b0f14;
-    color:#e6edf3;
-    font-family:system-ui, sans-serif;
-    display:flex;
-    height:100vh;
-  }
-  #panel{
-    width:240px;
-    background:#121821;
-    border-right:1px solid #1e293b;
-    padding:12px;
-    box-sizing:border-box;
-  }
-  canvas{
-    flex:1;
-    background:#0e141c;
-  }
-  input, button{
-    width:100%;
-    margin-bottom:8px;
-    background:#0e141c;
-    color:#e6edf3;
-    border:1px solid #2b3644;
-    padding:6px;
-    box-sizing:border-box;
-  }
-  button{cursor:pointer}
-  .locked{opacity:.4}
-</style>
+  <meta charset="utf-8">
+  <title>Sanity Test</title>
+  <style>
+    body { background:#111; color:#eee; font-family:sans-serif; padding:20px }
+    input, button { display:block; margin:10px 0; padding:6px }
+  </style>
 </head>
 <body>
 
-<div id="panel">
-  <b>User</b>
-  <input id="userInput" placeholder="username" />
-  <b>Token</b>
-  <input id="tokenInput" type="password" placeholder="token" />
-  <button id="loginBtn">Enter</button>
+<h2>Login Test</h2>
 
-  <div id="afterLogin" style="display:none">
-    <hr style="border:0;border-top:1px solid #2b3644;margin:8px 0" />
-    <div id="pointsDisplay"><b>Points:</b> 0</div>
+<input id="user" placeholder="username">
+<input id="token" placeholder="token">
+<button id="go">Enter</button>
 
-    <hr style="border:0;border-top:1px solid #2b3644;margin:8px 0" />
-    <b>Rooms</b>
-    <button class="locked">Bathroom 🔒</button>
-    <button class="locked">Kitchen 🔒</button>
-    <button class="locked">Extra Room 🔒</button>
-
-    <hr style="border:0;border-top:1px solid #2b3644;margin:8px 0" />
-    <b>Unlock Code</b>
-    <input id="codeInput" placeholder="BATHROOM-XXXX" />
-    <button id="applyCode">Apply</button>
-  </div>
-</div>
-
-<canvas id="map"></canvas>
+<pre id="out">waiting…</pre>
 
 <script>
-// ===== CONFIG =====
-const TILE = 32;
-const POINTS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRrPm6oe4q_rk9mOeEotMu-XfY8L6M0w1SWq3YEtFSfp4si8xxBud25WF1bect9f7-ormzp7POypcQx/pub?output=csv';
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRrPm6oe4q_rk9mOeEotMu-XfY8L6M0w1SWq3YEtFSfp4si8xxBud25WF1bect9f7-ormzp7POypcQx/pub?output=csv";
 
-// ===== CANVAS =====
-const canvas = document.getElementById('map');
-const ctx = canvas.getContext('2d');
+go.onclick = async () => {
+  out.textContent = "clicked…";
 
-let loggedIn = false;
-let points = 0;
-
-function resize(){
-  canvas.width = window.innerWidth - 240;
-  canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resize);
-resize();
-
-// ===== STATE =====
-let loggedIn = false;
-let points = 0;
-
-const house = {
-  rooms: [],
-  door: {x:0,y:0}
-};
-
-function initHouse(){
-  house.rooms = [{ x:4, y:4, w:6, h:8 }];
-  house.door = { x:6, y:4 };
-}
-
-// ===== DRAW =====
-function draw(){
-  // guard against early canvas calls
-  if(typeof loggedIn === 'undefined' || !loggedIn) return;
-
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  house.rooms.forEach(r=>{
-    ctx.fillStyle = '#374151';
-    ctx.fillRect(r.x*TILE,r.y*TILE,r.w*TILE,r.h*TILE);
-    ctx.strokeStyle = '#9ca3af';
-    ctx.strokeRect(r.x*TILE,r.y*TILE,r.w*TILE,r.h*TILE);
-  });
-
-  ctx.fillStyle = '#22c55e';
-  ctx.fillRect(house.door.x*TILE, house.door.y*TILE, TILE, TILE/2);
-});
-
-  ctx.fillStyle = '#22c55e';
-  ctx.fillRect(house.door.x*TILE, house.door.y*TILE, TILE, TILE/2);
-}
-
-// ===== LOGIN =====
-document.getElementById('loginBtn').onclick = async ()=>{
-  const user = userInput.value.trim();
-  const token = tokenInput.value.trim();
-  if(!user || !token) return;
-
-  try{
-    const res = await fetch(POINTS_CSV_URL);
+  try {
+    const res = await fetch(CSV_URL);
     const text = await res.text();
 
-    const lines = text.split('\n');
-    const header = lines.shift().replace('\r','').split(',').map(h=>h.toLowerCase());
-    const uIdx = header.indexOf('username');
-    const tIdx = header.indexOf('token');
-    const pIdx = header.indexOf('points');
+    const lines = text.trim().split("\n");
+    const header = lines.shift().split(",").map(h => h.toLowerCase());
 
-    for(const line of lines){
-      const row = line.replace('\r','').split(',');
-      if(row[uIdx] === user && row[tIdx] === token){
-        points = Number(row[pIdx]) || 0;
-        pointsDisplay.innerHTML = '<b>Points:</b> ' + points;
-        loggedIn = true;
-        afterLogin.style.display = 'block';
-        initHouse();
-        draw();
+    const u = header.indexOf("username");
+    const t = header.indexOf("token");
+    const p = header.indexOf("points");
+
+    for (const line of lines) {
+      const row = line.split(",");
+      if (row[u] === user.value && row[t] === token.value) {
+        out.textContent =
+          "MATCHED\nusername: " + row[u] +
+          "\npoints: " + row[p];
         return;
       }
     }
-  }catch(e){
-    console.error(e);
+
+    out.textContent = "no match";
+
+  } catch (e) {
+    out.textContent = "ERROR:\n" + e;
   }
 };
 </script>
+
 </body>
 </html>
