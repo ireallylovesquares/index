@@ -28,6 +28,7 @@
 
 <h2>Login Test (Baseline)</h2>
 
+<select id="savedLogins" style="width:260px;margin:10px 0"></select>
 <input id="user" placeholder="username" />
 <input id="token" placeholder="token" />
 <button id="go" type="button">Enter</button>
@@ -41,39 +42,72 @@
   const userEl = document.getElementById('user');
   const tokenEl = document.getElementById('token');
   const outEl = document.getElementById('out');
+  const savedSelect = document.getElementById('savedLogins');
+
+  let saved = JSON.parse(localStorage.getItem('savedLogins') || '[]');
+
+  function refreshSelect(){
+    savedSelect.innerHTML = '<option value="">-- select saved login --</option>';
+    saved.forEach((s,i)=>{
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = s.username;
+      savedSelect.appendChild(opt);
+    });
+  }
+
+  savedSelect.addEventListener('change', ()=>{
+    const s = saved[savedSelect.value];
+    if(!s) return;
+    userEl.value = s.username;
+    tokenEl.value = s.token;
+  });
+
+  refreshSelect();
 
   document.getElementById('go').addEventListener('click', async () => {
-    outEl.textContent = 'clicked';
+    const username = userEl.value.trim();
+    const token = tokenEl.value.trim();
+    if(!username || !token) return;
+
+    outEl.textContent = 'checking…';
 
     try {
       const res = await fetch(CSV_URL, { cache: 'no-store' });
       const text = await res.text();
 
-      const lines = text.trim().split(/\r?\n/);
+      const lines = text.trim().split(/
+?
+/);
       const header = lines.shift().split(',').map(h => h.trim().toLowerCase());
 
       const u = header.indexOf('username');
       const t = header.indexOf('token');
       const p = header.indexOf('points');
 
-      if (u < 0 || t < 0 || p < 0) {
-        outEl.textContent = 'bad header: ' + JSON.stringify(header);
-        return;
-      }
-
-      const username = userEl.value.trim();
-      const token = tokenEl.value.trim();
-
       for (const line of lines) {
         const row = line.split(',').map(v => v.trim());
         if (row[u] === username && row[t] === token) {
+          if(!saved.find(s=>s.username===username && s.token===token)){
+            saved.push({ username, token });
+            localStorage.setItem('savedLogins', JSON.stringify(saved));
+            refreshSelect();
+          }
+
           outEl.textContent =
-            'MATCHED\n' +
-            'username: ' + row[u] + '\n' +
-            'points: ' + row[p] + '\n\n' +
-            '---\n' +
-            'login used:\n' +
-            'name: ' + username + '\n' +
+            'MATCHED
+' +
+            'username: ' + row[u] + '
+' +
+            'points: ' + row[p] + '
+
+' +
+            '---
+' +
+            'login used:
+' +
+            'name: ' + username + '
+' +
             'token: ' + token;
           return;
         }
@@ -82,7 +116,8 @@
       outEl.textContent = 'no match';
 
     } catch (e) {
-      outEl.textContent = 'ERROR:\n' + (e && e.message ? e.message : String(e));
+      outEl.textContent = 'ERROR:
+' + (e && e.message ? e.message : String(e));
     }
   });
 })();
