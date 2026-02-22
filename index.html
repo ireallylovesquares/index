@@ -50,14 +50,16 @@
     savedSelect.innerHTML = '<option value="">-- select saved login --</option>';
     saved.forEach((s,i)=>{
       const opt = document.createElement('option');
-      opt.value = i;
+      opt.value = String(i);
       opt.textContent = s.username;
       savedSelect.appendChild(opt);
     });
   }
 
   savedSelect.addEventListener('change', ()=>{
-    const s = saved[savedSelect.value];
+    const idx = savedSelect.value;
+    if(idx === '') return;
+    const s = saved[Number(idx)];
     if(!s) return;
     userEl.value = s.username;
     tokenEl.value = s.token;
@@ -70,7 +72,7 @@
     const token = tokenEl.value.trim();
     if(!username || !token) return;
 
-    outEl.textContent = 'checking…';
+    outEl.textContent = 'checking...';
 
     try {
       const res = await fetch(CSV_URL, { cache: 'no-store' });
