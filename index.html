@@ -11,7 +11,7 @@
       font-family:system-ui,sans-serif;
       padding:24px;
     }
-    input,button{
+    input,button,select{
       display:block;
       margin:10px 0;
       padding:8px;
@@ -28,7 +28,7 @@
 
 <h2>Login Test (Baseline)</h2>
 
-<select id="savedLogins" style="width:260px;margin:10px 0"></select>
+<select id="savedLogins"></select>
 <input id="user" placeholder="username" />
 <input id="token" placeholder="token" />
 <button id="go" type="button">Enter</button>
@@ -48,7 +48,9 @@
   let saved = [];
   try {
     saved = JSON.parse(localStorage.getItem('savedLogins') || '[]');
-  } catch(e) { saved = []; }
+  } catch {
+    saved = [];
+  }
 
   function refreshSelect(){
     savedSelect.innerHTML = '<option value="">-- select saved login --</option>';
@@ -61,9 +63,8 @@
   }
 
   savedSelect.addEventListener('change', ()=>{
-    const idx = savedSelect.value;
-    if(idx === '') return;
-    const s = saved[Number(idx)];
+    if(savedSelect.value === '') return;
+    const s = saved[Number(savedSelect.value)];
     if(!s) return;
     userEl.value = s.username;
     tokenEl.value = s.token;
@@ -85,10 +86,8 @@
       const res = await fetch(CSV_URL, { cache: 'no-store' });
       const text = await res.text();
 
-      const lines = text.trim().split(/
-?
-/);
-      const header = lines.shift().split(',').map(h => h.trim().toLowerCase());
+      const lines = text.trim().split(/\r?\n/);
+      const header = (lines.shift() || '').split(',').map(h => h.trim().toLowerCase());
 
       const u = header.indexOf('username');
       const t = header.indexOf('token');
@@ -100,6 +99,7 @@
       }
 
       for(const line of lines){
+        if(!line) continue;
         const row = line.split(',').map(v => v.trim());
         if(row[u] === username && row[t] === token){
           if(!saved.find(s => s.username === username && s.token === token)){
@@ -109,19 +109,12 @@
           }
 
           outEl.textContent =
-            'MATCHED
-' +
-            'username: ' + row[u] + '
-' +
-            'points: ' + row[p] + '
-
-' +
-            '---
-' +
-            'login used:
-' +
-            'name: ' + username + '
-' +
+            'MATCHED\n' +
+            'username: ' + row[u] + '\n' +
+            'points: ' + row[p] + '\n\n' +
+            '---\n' +
+            'login used:\n' +
+            'name: ' + username + '\n' +
             'token: ' + token;
           return;
         }
@@ -130,8 +123,7 @@
       outEl.textContent = 'no match';
 
     } catch(err){
-      outEl.textContent = 'ERROR:
-' + String(err);
+      outEl.textContent = 'ERROR:\n' + String(err);
     }
   });
 })();
