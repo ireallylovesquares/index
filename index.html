@@ -43,8 +43,12 @@
   const tokenEl = document.getElementById('token');
   const outEl = document.getElementById('out');
   const savedSelect = document.getElementById('savedLogins');
+  const goBtn = document.getElementById('go');
 
-  let saved = JSON.parse(localStorage.getItem('savedLogins') || '[]');
+  let saved = [];
+  try {
+    saved = JSON.parse(localStorage.getItem('savedLogins') || '[]');
+  } catch(e) { saved = []; }
 
   function refreshSelect(){
     savedSelect.innerHTML = '<option value="">-- select saved login --</option>';
@@ -67,10 +71,13 @@
 
   refreshSelect();
 
-  document.getElementById('go').addEventListener('click', async () => {
+  goBtn.addEventListener('click', async () => {
     const username = userEl.value.trim();
     const token = tokenEl.value.trim();
-    if(!username || !token) return;
+    if(!username || !token){
+      outEl.textContent = 'missing username or token';
+      return;
+    }
 
     outEl.textContent = 'checking...';
 
@@ -87,10 +94,15 @@
       const t = header.indexOf('token');
       const p = header.indexOf('points');
 
-      for (const line of lines) {
+      if(u === -1 || t === -1 || p === -1){
+        outEl.textContent = 'bad csv header: ' + header.join(', ');
+        return;
+      }
+
+      for(const line of lines){
         const row = line.split(',').map(v => v.trim());
-        if (row[u] === username && row[t] === token) {
-          if(!saved.find(s=>s.username===username && s.token===token)){
+        if(row[u] === username && row[t] === token){
+          if(!saved.find(s => s.username === username && s.token === token)){
             saved.push({ username, token });
             localStorage.setItem('savedLogins', JSON.stringify(saved));
             refreshSelect();
@@ -117,9 +129,9 @@
 
       outEl.textContent = 'no match';
 
-    } catch (e) {
+    } catch(err){
       outEl.textContent = 'ERROR:
-' + (e && e.message ? e.message : String(e));
+' + String(err);
     }
   });
 })();
