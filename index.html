@@ -70,7 +70,11 @@
           outEl.textContent =
             'MATCHED\n' +
             'username: ' + row[u] + '\n' +
-            'points: ' + row[p];
+            'points: ' + row[p] + '\n\n' +
+            '---\n' +
+            'login used:\n' +
+            'name: ' + username + '\n' +
+            'token: ' + token;
           return;
         }
       }
@@ -86,4 +90,3 @@
 
 </body>
 </html>
-S
