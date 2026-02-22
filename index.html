@@ -82,7 +82,8 @@ function resize(){
   canvas.height = window.innerHeight;
   draw();
 }
-window.addEventLis
+window.addEventListener('resize', resize);
+resize();
 
 // ===== STATE =====
 let loggedIn = false;
@@ -100,8 +101,10 @@ function initHouse(){
 
 // ===== DRAW =====
 function draw(){
+  // guard against early canvas calls
+  if(typeof loggedIn === 'undefined' || !loggedIn) return;
+
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(!loggedIn) return;
 
   house.rooms.forEach(r=>{
     ctx.fillStyle = '#374151';
@@ -109,6 +112,10 @@ function draw(){
     ctx.strokeStyle = '#9ca3af';
     ctx.strokeRect(r.x*TILE,r.y*TILE,r.w*TILE,r.h*TILE);
   });
+
+  ctx.fillStyle = '#22c55e';
+  ctx.fillRect(house.door.x*TILE, house.door.y*TILE, TILE, TILE/2);
+});
 
   ctx.fillStyle = '#22c55e';
   ctx.fillRect(house.door.x*TILE, house.door.y*TILE, TILE, TILE/2);
