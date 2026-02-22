@@ -1,57 +1,70 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Sanity Test</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sanity Test v2</title>
   <style>
-    body { background:#111; color:#eee; font-family:sans-serif; padding:20px }
-    input, button { display:block; margin:10px 0; padding:6px }
+    body{background:#111;color:#eee;font-family:system-ui,sans-serif;padding:20px}
+    input,button{display:block;margin:10px 0;padding:8px;width:260px}
+    pre{background:#000;padding:12px;white-space:pre-wrap}
   </style>
 </head>
 <body>
+  <h2>Login Test v2</h2>
+  <input id="user" placeholder="username" />
+  <input id="token" placeholder="token" />
+  <button id="go" type="button">Enter</button>
+  <pre id="out">loaded…</pre>
 
-<h2>Login Test</h2>
+  <script>
+  (function(){
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRrPm6oe4q_rk9mOeEotMu-XfY8L6M0w1SWq3YEtFSfp4si8xxBud25WF1bect9f7-ormzp7POypcQx/pub?output=csv";
 
-<input id="user" placeholder="username">
-<input id="token" placeholder="token">
-<button id="go">Enter</button>
+    const userEl = document.getElementById("user");
+    const tokenEl = document.getElementById("token");
+    const goEl = document.getElementById("go");
+    const outEl = document.getElementById("out");
 
-<pre id="out">waiting…</pre>
+    // prove JS is running at all
+    outEl.textContent = "js alive. click Enter.";
 
-<script>
-const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRrPm6oe4q_rk9mOeEotMu-XfY8L6M0w1SWq3YEtFSfp4si8xxBud25WF1bect9f7-ormzp7POypcQx/pub?output=csv";
+    goEl.addEventListener("click", async () => {
+      outEl.textContent = "clicked. fetching…";
 
-go.onclick = async () => {
-  out.textContent = "clicked…";
+      try{
+        const res = await fetch(CSV_URL, { cache: "no-store" });
+        const text = await res.text();
 
-  try {
-    const res = await fetch(CSV_URL);
-    const text = await res.text();
+        const lines = text.trim().split("\n").map(l => l.replace("\r",""));
+        const header = lines.shift().split(",").map(h => h.trim().toLowerCase());
+        const u = header.indexOf("username");
+        const t = header.indexOf("token");
+        const p = header.indexOf("points");
 
-    const lines = text.trim().split("\n");
-    const header = lines.shift().split(",").map(h => h.toLowerCase());
+        if(u < 0 || t < 0 || p < 0){
+          outEl.textContent = "bad header: " + header.join(" | ");
+          return;
+        }
 
-    const u = header.indexOf("username");
-    const t = header.indexOf("token");
-    const p = header.indexOf("points");
+        const user = userEl.value.trim();
+        const token = tokenEl.value.trim();
 
-    for (const line of lines) {
-      const row = line.split(",");
-      if (row[u] === user.value && row[t] === token.value) {
-        out.textContent =
-          "MATCHED\nusername: " + row[u] +
-          "\npoints: " + row[p];
-        return;
+        for(const line of lines){
+          const row = line.split(",").map(v => v.trim());
+          if(row[u] === user && row[t] === token){
+            outEl.textContent = "MATCHED\nusername: " + row[u] + "\npoints: " + row[p];
+            return;
+          }
+        }
+
+        outEl.textContent = "no match";
+
+      }catch(e){
+        outEl.textContent = "ERROR:\n" + (e && e.message ? e.message : String(e));
       }
-    }
-
-    out.textContent = "no match";
-
-  } catch (e) {
-    out.textContent = "ERROR:\n" + e;
-  }
-};
-</script>
-
+    });
+  })();
+  </script>
 </body>
 </html>
