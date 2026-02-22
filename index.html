@@ -74,13 +74,15 @@ const POINTS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRrPm6oe
 const canvas = document.getElementById('map');
 const ctx = canvas.getContext('2d');
 
+let loggedIn = false;
+let points = 0;
+
 function resize(){
   canvas.width = window.innerWidth - 240;
   canvas.height = window.innerHeight;
   draw();
 }
-window.addEventListener('resize', resize);
-resize();
+window.addEventLis
 
 // ===== STATE =====
 let loggedIn = false;
